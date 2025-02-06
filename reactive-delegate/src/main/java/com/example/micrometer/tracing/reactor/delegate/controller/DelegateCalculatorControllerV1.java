@@ -17,11 +17,11 @@ import java.util.Optional;
 @RestController
 @RequestMapping("delegate/v1/calculator")
 @Slf4j
-public class DelegateWebfluxCalculatorControllerV1 {
+public class DelegateCalculatorControllerV1 {
 
 	private final ObservationRegistry observationRegistry;
 
-	public DelegateWebfluxCalculatorControllerV1(ObservationRegistry observationRegistry) {
+	public DelegateCalculatorControllerV1(ObservationRegistry observationRegistry) {
 		this.observationRegistry = observationRegistry;
 	}
 

@@ -23,6 +23,7 @@ import java.util.Optional;
 @Slf4j
 public class FrontCalculatorControllerV1 {
 
+	public static final String DELEGATE_ENDPOINT = "/delegate/v1/calculator/square";
 	private final ObservationRegistry observationRegistry;
 	private final WebClient webClientToDelegate;
 
@@ -54,7 +55,7 @@ public class FrontCalculatorControllerV1 {
 		return webClientToDelegate.get()
 				.uri(uriBuilder ->
 						uriBuilder
-								.path("/delegate/v1/calculator/square")
+								.path(DELEGATE_ENDPOINT)
 								.queryParam("value", value)
 								.build())
 				.retrieve()
