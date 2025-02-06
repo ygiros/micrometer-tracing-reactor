@@ -1,0 +1,27 @@
+spring:
+  application.name: reactive-front
+  reactor.context-propagation: auto
+
+server.port: 11011
+
+management:
+  tracing:
+    # default values
+    enabled: true
+    baggage:
+      enabled: true
+      correlation.enabled: true
+    propagation:
+      type: W3C
+      consume: W3C, B3, B3_MULTI
+      produce: W3C
+    # non-default values
+    sampling.probability: 1.0
+
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+
+logging:
+  level:
+    root: info
