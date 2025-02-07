@@ -3,14 +3,10 @@
 Small standalone project to test [Micrometer Tracing](https://docs.micrometer.io/tracing/reference/index.html) with [OpenTelemetry](https://opentelemetry.io/) bridge and [reactive programming](https://projectreactor.io/).
 
 ## Requirements
-
----
 - JDK17
 - Docker Engine / Docker CLI / Docker Compose plugin
 
 ## Technical stack
-
----
 - Spring Boot 3
 - Spring Webflux / Reactor
 - Micrometer Tracing + OTEL Bridge
@@ -18,8 +14,6 @@ Small standalone project to test [Micrometer Tracing](https://docs.micrometer.io
 (cf `build.gradle` for details)
 
 ## External services
-
----
 External services are available with docker containers. Check `docker/compose.yaml` for details.
 
 ### Start services
@@ -36,8 +30,6 @@ docker compose up -d
 - Jaeger UI available on http://localhost:16686/
 
 ## Project description
-
----
 Gradle multi-module project
 - reactive-front (Spring Boot web server)
 - reactive-delegate (Spring Boot web server)
