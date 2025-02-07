@@ -17,6 +17,7 @@ import java.util.Optional;
 
 /**
  * Web controller with spans creation + spans attributes assignations
+ * WARNING - V1 is functional only if V2 is disabled (comment code)
  */
 @RestController
 @RequestMapping("/v1/calculator")
