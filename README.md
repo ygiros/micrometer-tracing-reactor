@@ -3,6 +3,7 @@
 Small standalone project to test [Micrometer Tracing](https://docs.micrometer.io/tracing/reference/index.html) with [OpenTelemetry](https://opentelemetry.io/) bridge and [reactive programming](https://projectreactor.io/).
 
 ## Requirements
+- curl
 - JDK17
 - Docker Engine / Docker CLI / Docker Compose plugin
 
@@ -15,13 +16,6 @@ Small standalone project to test [Micrometer Tracing](https://docs.micrometer.io
 
 ## External services
 External services are available with docker containers. Check `docker/compose.yaml` for details.
-
-### Start services
-```shell
-cd ${PATH_TO_REPO}/docker
-
-docker compose up -d
-```
 
 ### Services
 #### [Jaeger](https://www.jaegertracing.io/)
@@ -59,3 +53,33 @@ Objectives
     - Use context propagation with Baggage injection inside reactor sequence
   - Use OTEL Tracer API
     - Log current Baggage (to validate context propagation)
+
+### Run Test
+- Start external services
+```shell
+cd ${PATH_TO_REPO}/docker
+
+docker compose up -d
+```
+- Build gradle project
+```shell
+cd ${PATH_TO_REPO}
+
+./gradlew build
+```
+- Start both Spring Boot servers
+```shell
+cd ${PATH_TO_REPO}/reactive-front/build/libs
+
+java -jar reactive-front-\'1.0.0-SNAPSHOT\'.jar 
+```
+```shell
+cd ${PATH_TO_REPO}/reactive-delegate/build/libs
+
+java -jar reactive-delegate-\'1.0.0-SNAPSHOT\'.jar 
+```
+- Execute GET request to reactive-front
+```shell
+curl http://localhost:11011/v2/calculator/square?value=2
+```
+- Check traces for reactive-front service on Jaeger UI : http://localhost:16686/
