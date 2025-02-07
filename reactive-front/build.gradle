@@ -1,0 +1,3 @@
+bootJar {
+    mainClass = 'com.example.micrometer.tracing.reactor.front.ReactiveFrontApplication'
+}

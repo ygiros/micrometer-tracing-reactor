@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ReactiveFrontApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+    <module name="micrometer-tracing-reactor.reactive-front.main" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.micrometer.tracing.reactor.front.ReactiveFrontApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
