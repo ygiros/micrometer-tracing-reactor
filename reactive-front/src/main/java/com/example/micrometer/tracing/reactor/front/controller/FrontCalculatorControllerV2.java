@@ -4,9 +4,7 @@ import io.micrometer.context.ContextRegistry;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.contextpropagation.ObservationAwareBaggageThreadLocalAccessor;
-import io.micrometer.tracing.contextpropagation.ObservationAwareSpanThreadLocalAccessor;
 import io.micrometer.tracing.contextpropagation.reactor.ReactorBaggage;
-import io.micrometer.tracing.handler.DefaultTracingObservationHandler;
 import io.micrometer.tracing.otel.bridge.OtelTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.observability.micrometer.Micrometer;
-import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
