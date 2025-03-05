@@ -90,14 +90,8 @@ public class FrontCalculatorControllerV2 {
 						getCurrentObservation()
 								.highCardinalityKeyValue("value.sent.to.delegate", String.valueOf(value))
 								.highCardinalityKeyValue("value.received.from.delegate", String.valueOf(squareValue)))
-				.flatMap(this::addSquareValueInBaggage)
 				.name("computeSquare-method")
 				.tap(Micrometer.observation(observationRegistry));
-	}
-
-	private Mono<Double> addSquareValueInBaggage(Double squareValue) {
-		return Mono.fromSupplier(() -> squareValue)
-				.contextWrite(ReactorBaggage.append("baggage.result.from.delegate.sent.to.front", String.valueOf(squareValue)));
 	}
 
 	private Observation getCurrentObservation() {
