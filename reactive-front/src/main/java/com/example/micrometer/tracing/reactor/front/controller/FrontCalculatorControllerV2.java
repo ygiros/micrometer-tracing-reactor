@@ -56,7 +56,10 @@ public class FrontCalculatorControllerV2 {
 					log.info("Current Baggage = {}", otelTracer.getAllBaggage());
 				})
 				.flatMap(this::computeSquare)
-				.doOnNext(squareValue -> log.info("Respond result = {} to client", squareValue))
+				.doOnNext(squareValue -> {
+					log.info("Respond result = {} to client", squareValue);
+					log.info("Current Baggage = {}", otelTracer.getAllBaggage());
+				})
 				.map(ResponseEntity::ok)
 				// Name sequence (= name generated span)
 				.name("getSquare-method")
@@ -87,8 +90,14 @@ public class FrontCalculatorControllerV2 {
 						getCurrentObservation()
 								.highCardinalityKeyValue("value.sent.to.delegate", String.valueOf(value))
 								.highCardinalityKeyValue("value.received.from.delegate", String.valueOf(squareValue)))
+				.flatMap(this::addSquareValueInBaggage)
 				.name("computeSquare-method")
 				.tap(Micrometer.observation(observationRegistry));
+	}
+
+	private Mono<Double> addSquareValueInBaggage(Double squareValue) {
+		return Mono.fromSupplier(() -> squareValue)
+				.contextWrite(ReactorBaggage.append("baggage.result.from.delegate.sent.to.front", String.valueOf(squareValue)));
 	}
 
 	private Observation getCurrentObservation() {
