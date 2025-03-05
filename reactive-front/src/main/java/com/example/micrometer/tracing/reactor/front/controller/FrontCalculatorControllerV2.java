@@ -44,10 +44,8 @@ public class FrontCalculatorControllerV2 {
 
 		// ##############
 		// https://docs.micrometer.io/tracing/reference/configuring.html#_context_propagation_with_micrometer_tracing
-		ObservationAwareSpanThreadLocalAccessor observationAwareSpanThreadLocalAccessor = new ObservationAwareSpanThreadLocalAccessor(observationRegistry, otelTracer);
 		ObservationAwareBaggageThreadLocalAccessor observationAwareBaggageThreadLocalAccessor = new ObservationAwareBaggageThreadLocalAccessor(observationRegistry, otelTracer);
 		ContextRegistry.getInstance()
-				.registerThreadLocalAccessor(observationAwareSpanThreadLocalAccessor)
 				.registerThreadLocalAccessor(observationAwareBaggageThreadLocalAccessor);
 		// ##############
 	}
