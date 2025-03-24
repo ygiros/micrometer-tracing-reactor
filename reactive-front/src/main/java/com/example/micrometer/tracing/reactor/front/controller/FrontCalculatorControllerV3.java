@@ -33,6 +33,29 @@ public class FrontCalculatorControllerV3 {
 		this.tracingService = tracingService;
 	}
 
+	@GetMapping(path = "/square-of-two")
+	public Mono<ResponseEntity<Double>> getSquareOf2() {
+
+		double value = 2.0;
+
+		return Mono.fromSupplier(() -> value)
+				.doOnNext(aDouble -> {
+					log.info("1 - Current Baggage = {}", this.tracingService.getOtelTracer().getAllBaggage());
+				})
+				.map(aDouble -> aDouble * aDouble)
+				.flatMap(squareValue ->
+						Mono.just(squareValue)
+								.contextWrite(ReactorBaggage.append("squareValue", String.valueOf(squareValue)))
+				)
+				.doOnNext(aDouble -> {
+					log.info("2 - Current Baggage = {}", this.tracingService.getOtelTracer().getAllBaggage());
+				})
+				.map(ResponseEntity::ok)
+				.name("get-square-of-two")
+				.tap(Micrometer.observation(tracingService.getObservationRegistry()))
+				.contextWrite(ReactorBaggage.append("value", String.valueOf(value)));
+	}
+
 	@GetMapping(path = "/square")
 	public Mono<ResponseEntity<Double>> getSquare(@RequestParam(value = "value") Double value) {
 
