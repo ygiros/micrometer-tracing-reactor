@@ -44,12 +44,12 @@ public class TracingService {
 	}
 
 	public <T> Mono<T> addBaggage(T valueToReturn, String key, String value) {
-		return Mono.fromSupplier(() -> valueToReturn)
+		return Mono.just(valueToReturn)
 				.contextWrite(ReactorBaggage.append(key, value));
 	}
 
 	public <T> Mono<T> addBaggage(T valueToReturn, Map<String, String> baggage) {
-		return Mono.fromSupplier(() -> valueToReturn)
+		return Mono.just(valueToReturn)
 				.contextWrite(ReactorBaggage.append(baggage));
 	}
 
