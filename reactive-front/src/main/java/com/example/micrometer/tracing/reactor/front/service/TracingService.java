@@ -44,13 +44,9 @@ public class TracingService {
 	}
 
 	public <T> Mono<T> addBaggage(T valueToReturn, String key, String value) {
+		// Check https://github.com/micrometer-metrics/tracing/issues/959#issuecomment-2706448262 for explanations
 		return Mono.just(valueToReturn)
 				.contextWrite(ReactorBaggage.append(key, value));
-	}
-
-	public <T> Mono<T> addBaggage(T valueToReturn, Map<String, String> baggage) {
-		return Mono.just(valueToReturn)
-				.contextWrite(ReactorBaggage.append(baggage));
 	}
 
 	public Observation getCurrentObservation() {

@@ -7,6 +7,7 @@ import org.springframework.boot.actuate.autoconfigure.observation.ObservationReg
 import org.springframework.stereotype.Component;
 import reactor.netty.observability.ReactorNettyTracingObservationHandler;
 
+// Check https://github.com/micrometer-metrics/tracing/issues/959#issuecomment-2667954302
 @Component
 public class MyObservationRegistryCustomizer implements ObservationRegistryCustomizer<ObservationRegistry> {
 
@@ -18,6 +19,7 @@ public class MyObservationRegistryCustomizer implements ObservationRegistryCusto
 
 	@Override
 	public void customize(ObservationRegistry registry) {
+		// Use specific ReactorNettyTracingObservationHandler instead of DefaultTracingObservationHandler when using Reactor + Netty
 		registry.observationConfig().observationHandler(new ReactorNettyTracingObservationHandler(otelTracer));
 	}
 }

@@ -33,6 +33,11 @@ public class FrontCalculatorControllerV3 {
 		this.tracingService = tracingService;
 	}
 
+	/**
+	 * Simplified endpoint to compute directly 2² without requesting ReactiveDelegateApplication
+	 *
+	 * @return 2² = 4
+	 */
 	@GetMapping(path = "/square-of-two")
 	public Mono<ResponseEntity<Double>> getSquareOf2() {
 
@@ -56,6 +61,14 @@ public class FrontCalculatorControllerV3 {
 				.contextWrite(ReactorBaggage.append("value", String.valueOf(value)));
 	}
 
+	/**
+	 * Endpoint to compute a square value.
+	 * <br/>
+	 * Compute is delegate to ReactiveDelegateApplication.
+	 *
+	 * @param value to compute the square of
+	 * @return square value
+	 */
 	@GetMapping(path = "/square")
 	public Mono<ResponseEntity<Double>> getSquare(@RequestParam(value = "value") Double value) {
 
@@ -74,11 +87,11 @@ public class FrontCalculatorControllerV3 {
 				// .name must be declared before .tap to correctly name observation
 				.name("getSquare-method")
 				// Bind key/value pair to sequence (= set attribute to current span)
+				// Can be used to set attributes with values declared before sequence
 				.tag("value.from.request", value.toString())
 				// Declare observation on sequence (= generate span)
 				.tap(Micrometer.observation(tracingService.getObservationRegistry()))
-				// Appends Baggage - appends here because of https://github.com/micrometer-metrics/tracing/issues/561
-				// Didn't find the explanation of why it must be declared at the end ?
+				// Check https://github.com/micrometer-metrics/tracing/issues/959#issuecomment-2706448262 for explanation on why .contextWrite() must be at the end of the sequence
 				.contextWrite(ReactorBaggage.append("baggage.value.from.request", String.valueOf(value)));
 	}
 
@@ -95,14 +108,17 @@ public class FrontCalculatorControllerV3 {
 				.httpRequest(clientHttpRequest -> log.info("Request headers to delegate : {}", clientHttpRequest.getHeaders()))
 				.retrieve()
 				.bodyToMono(Double.class)
-				// Set attributes to current span with Observation API
 				.doOnNext(squareValue ->
+						// Set attributes to current span with Observation API
+						// Can be used to set attributes from result of previous Reactor operator (squareValue here)
 						tracingService.addAttributes(
-						Map.of(
-								"value.sent.to.delegate", value,
-								"value.received.from.delegate", squareValue)))
-				// Add squareValue returned by HTTP request in Baggage
-				.flatMap(squareValue -> this.tracingService.addBaggage(squareValue, "baggage.value.received.from.delegate", String.valueOf(squareValue)))
+								Map.of(
+										"value.sent.to.delegate", value,
+										"value.received.from.delegate", squareValue)))
+				.flatMap(squareValue -> {
+					// Add squareValue returned by HTTP request in Baggage
+					return this.tracingService.addBaggage(squareValue, "baggage.value.received.from.delegate", String.valueOf(squareValue));
+				})
 				.name("computeSquare-method")
 				.tap(Micrometer.observation(tracingService.getObservationRegistry()));
 	}
