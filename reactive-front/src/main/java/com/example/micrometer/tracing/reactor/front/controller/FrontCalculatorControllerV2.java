@@ -1,12 +1,8 @@
 package com.example.micrometer.tracing.reactor.front.controller;
 
-import io.micrometer.context.ContextRegistry;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.contextpropagation.ObservationAwareBaggageThreadLocalAccessor;
-import io.micrometer.tracing.contextpropagation.ObservationAwareSpanThreadLocalAccessor;
 import io.micrometer.tracing.contextpropagation.reactor.ReactorBaggage;
-import io.micrometer.tracing.handler.DefaultTracingObservationHandler;
 import io.micrometer.tracing.otel.bridge.OtelTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.observability.micrometer.Micrometer;
-import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
@@ -42,18 +37,13 @@ public class FrontCalculatorControllerV2 {
 		this.webClientToDelegate = webClientToDelegate;
 		this.otelTracer = otelTracer;
 
-		// ##############
-		// https://docs.micrometer.io/tracing/reference/configuring.html#_context_propagation_with_micrometer_tracing
-		this.observationRegistry.observationConfig().observationHandler(new DefaultTracingObservationHandler(otelTracer));
-
-		ObservationAwareSpanThreadLocalAccessor observationAwareSpanThreadLocalAccessor = new ObservationAwareSpanThreadLocalAccessor(observationRegistry, otelTracer);
-		ObservationAwareBaggageThreadLocalAccessor observationAwareBaggageThreadLocalAccessor = new ObservationAwareBaggageThreadLocalAccessor(observationRegistry, otelTracer);
-		ContextRegistry.getInstance()
-				.loadThreadLocalAccessors()
-				.registerThreadLocalAccessor(observationAwareSpanThreadLocalAccessor)
-				.registerThreadLocalAccessor(observationAwareBaggageThreadLocalAccessor);
-		Hooks.enableAutomaticContextPropagation();
-		// ##############
+		// Following configuration is now declared in com.example.micrometer.tracing.reactor.front.service.TracingService (used by V3)
+//		// ##############
+//		// https://docs.micrometer.io/tracing/reference/configuring.html#_context_propagation_with_micrometer_tracing
+//		ObservationAwareBaggageThreadLocalAccessor observationAwareBaggageThreadLocalAccessor = new ObservationAwareBaggageThreadLocalAccessor(observationRegistry, otelTracer);
+//		ContextRegistry.getInstance()
+//				.registerThreadLocalAccessor(observationAwareBaggageThreadLocalAccessor);
+//		// ##############
 	}
 
 	@GetMapping(path = "/square")
@@ -65,7 +55,10 @@ public class FrontCalculatorControllerV2 {
 					log.info("Current Baggage = {}", otelTracer.getAllBaggage());
 				})
 				.flatMap(this::computeSquare)
-				.doOnNext(squareValue -> log.info("Respond result = {} to client", squareValue))
+				.doOnNext(squareValue -> {
+					log.info("Respond result = {} to client", squareValue);
+					log.info("Current Baggage = {}", otelTracer.getAllBaggage());
+				})
 				.map(ResponseEntity::ok)
 				// Name sequence (= name generated span)
 				.name("getSquare-method")
