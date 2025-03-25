@@ -43,6 +43,7 @@ Endpoints have {version}
 |---------|----------------------------------------------------------------------------------------------------|
 | v1      | Trace request with Micrometer Tracing but no context propagation                                   |
 | v2      | Trace request with Micrometer Tracing with context propagation between front and delegate services |
+| v3      | Optimizations to wrap tracing features in a single service                                         |
 
 Objectives
 - Use Micrometer Tracing with OpenTelemetry Bridge to trace HTTP request from client
