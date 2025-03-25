@@ -1,9 +1,7 @@
 package com.example.micrometer.tracing.reactor.front.controller;
 
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
+import com.example.micrometer.tracing.reactor.front.service.TracingService;
 import io.micrometer.tracing.contextpropagation.reactor.ReactorBaggage;
-import io.micrometer.tracing.otel.bridge.OtelTracer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
@@ -15,35 +13,47 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.observability.micrometer.Micrometer;
 import reactor.core.publisher.Mono;
 
-import java.util.Optional;
+import java.util.Map;
 
 /**
- * Web controller with spans creation + spans attributes assignations + context propagation
+ * V3 : Factorizing ObservationRegistry & OtelTracer features in a TracingService
  */
 @RestController
-@RequestMapping("/v2/calculator")
+@RequestMapping("/v3/calculator")
 @Slf4j
-public class FrontCalculatorControllerV2 {
+public class FrontCalculatorControllerV3 {
 
 	public static final String DELEGATE_ENDPOINT = "/delegate/v2/calculator/square";
-	private final ObservationRegistry observationRegistry;
 	private final WebClient webClientToDelegate;
-	private final OtelTracer otelTracer;
+	private final TracingService tracingService;
 
-	public FrontCalculatorControllerV2(ObservationRegistry observationRegistry,
-									   @Qualifier("webClientToDelegate") WebClient webClientToDelegate,
-									   @Qualifier("micrometerOtelTracer") OtelTracer otelTracer) {
-		this.observationRegistry = observationRegistry;
+	public FrontCalculatorControllerV3(@Qualifier("webClientToDelegate") WebClient webClientToDelegate,
+									   TracingService tracingService) {
 		this.webClientToDelegate = webClientToDelegate;
-		this.otelTracer = otelTracer;
+		this.tracingService = tracingService;
+	}
 
-		// Following configuration is now declared in com.example.micrometer.tracing.reactor.front.service.TracingService (used by V3)
-//		// ##############
-//		// https://docs.micrometer.io/tracing/reference/configuring.html#_context_propagation_with_micrometer_tracing
-//		ObservationAwareBaggageThreadLocalAccessor observationAwareBaggageThreadLocalAccessor = new ObservationAwareBaggageThreadLocalAccessor(observationRegistry, otelTracer);
-//		ContextRegistry.getInstance()
-//				.registerThreadLocalAccessor(observationAwareBaggageThreadLocalAccessor);
-//		// ##############
+	@GetMapping(path = "/square-of-two")
+	public Mono<ResponseEntity<Double>> getSquareOf2() {
+
+		double value = 2.0;
+
+		return Mono.fromSupplier(() -> value)
+				.doOnNext(aDouble -> {
+					log.info("1 - Current Baggage = {}", this.tracingService.getOtelTracer().getAllBaggage());
+				})
+				.map(aDouble -> aDouble * aDouble)
+				.flatMap(squareValue ->
+						Mono.just(squareValue)
+								.contextWrite(ReactorBaggage.append("squareValue", String.valueOf(squareValue)))
+				)
+				.doOnNext(aDouble -> {
+					log.info("2 - Current Baggage = {}", this.tracingService.getOtelTracer().getAllBaggage());
+				})
+				.map(ResponseEntity::ok)
+				.name("get-square-of-two")
+				.tap(Micrometer.observation(tracingService.getObservationRegistry()))
+				.contextWrite(ReactorBaggage.append("value", String.valueOf(value)));
 	}
 
 	@GetMapping(path = "/square")
@@ -52,20 +62,21 @@ public class FrontCalculatorControllerV2 {
 		return Mono.fromSupplier(() -> value)
 				.doOnNext(aDouble -> {
 					log.info("Receive request to calculate square of {}", aDouble);
-					log.info("Current Baggage = {}", otelTracer.getAllBaggage());
+					tracingService.logCurrentBaggage();
 				})
 				.flatMap(this::computeSquare)
 				.doOnNext(squareValue -> {
 					log.info("Respond result = {} to client", squareValue);
-					log.info("Current Baggage = {}", otelTracer.getAllBaggage());
+					tracingService.logCurrentBaggage();
 				})
 				.map(ResponseEntity::ok)
 				// Name sequence (= name generated span)
+				// .name must be declared before .tap to correctly name observation
 				.name("getSquare-method")
 				// Bind key/value pair to sequence (= set attribute to current span)
 				.tag("value.from.request", value.toString())
 				// Declare observation on sequence (= generate span)
-				.tap(Micrometer.observation(observationRegistry))
+				.tap(Micrometer.observation(tracingService.getObservationRegistry()))
 				// Appends Baggage - appends here because of https://github.com/micrometer-metrics/tracing/issues/561
 				// Didn't find the explanation of why it must be declared at the end ?
 				.contextWrite(ReactorBaggage.append("baggage.value.from.request", String.valueOf(value)));
@@ -86,18 +97,13 @@ public class FrontCalculatorControllerV2 {
 				.bodyToMono(Double.class)
 				// Set attributes to current span with Observation API
 				.doOnNext(squareValue ->
-						getCurrentObservation()
-								.highCardinalityKeyValue("value.sent.to.delegate", String.valueOf(value))
-								.highCardinalityKeyValue("value.received.from.delegate", String.valueOf(squareValue)))
+						tracingService.addAttributes(
+						Map.of(
+								"value.sent.to.delegate", value,
+								"value.received.from.delegate", squareValue)))
+				// Add squareValue returned by HTTP request in Baggage
+				.flatMap(squareValue -> this.tracingService.addBaggage(squareValue, "baggage.value.received.from.delegate", String.valueOf(squareValue)))
 				.name("computeSquare-method")
-				.tap(Micrometer.observation(observationRegistry));
-	}
-
-	private Observation getCurrentObservation() {
-		return Optional.ofNullable(observationRegistry.getCurrentObservation())
-				.orElseGet(() -> {
-					log.warn("No current observation found");
-					return Observation.NOOP;
-				});
+				.tap(Micrometer.observation(tracingService.getObservationRegistry()));
 	}
 }
